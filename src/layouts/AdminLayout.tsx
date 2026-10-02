@@ -38,20 +38,28 @@ export const AdminLayout: React.FC = () => {
           <p className="text-xs text-stone-600 leading-relaxed">
             You must be logged in with administrative privileges to access the PocketFriendly Sarees backend.
           </p>
-          <div className="pt-2 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                switchRole('admin');
-              }}
-              className="w-full py-2.5 bg-maroon-800 hover:bg-maroon-900 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow transition-all"
-            >
-              Grant Admin Access (Evaluation Mode)
-            </button>
+          <div className="pt-2 flex flex-col gap-2.5">
             <Link
               to="/admin/login"
-              className="w-full py-2.5 border border-stone-300 text-stone-700 text-xs font-semibold rounded-lg hover:bg-stone-50 text-center"
+              className="w-full py-2.5 bg-maroon-800 hover:bg-maroon-900 text-white text-xs uppercase tracking-wider font-bold rounded-lg shadow text-center transition-colors"
             >
-              Go to Admin Login
+              Sign In with Staff Credentials
+            </Link>
+            {import.meta.env.DEV && (
+              <button
+                onClick={() => {
+                  switchRole('admin');
+                }}
+                className="w-full py-2 bg-gold-500/10 hover:bg-gold-500/20 text-gold-700 border border-gold-500/30 text-xs font-semibold rounded-lg transition-all"
+              >
+                Instant Dev Access (import.meta.env.DEV)
+              </button>
+            )}
+            <Link
+              to="/"
+              className="w-full py-2 text-stone-500 hover:text-stone-800 text-xs font-medium text-center"
+            >
+              ← Back to Storefront
             </Link>
           </div>
         </div>

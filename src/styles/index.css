@@ -1,31 +1,111 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 
-@layer base {
-  :root {
-    --brand-primary: #800020;
-    --brand-gold: #C5A059;
-    --brand-ivory: #FAF8F5;
-  }
+@theme {
+  --color-maroon-50: #FDF2F4;
+  --color-maroon-100: #FCE7EB;
+  --color-maroon-200: #F8D0D8;
+  --color-maroon-300: #F1A9B8;
+  --color-maroon-400: #E4748D;
+  --color-maroon-500: #D24467;
+  --color-maroon-600: #BA2B50;
+  --color-maroon-700: #9B1D3D;
+  --color-maroon-800: #800020;
+  --color-maroon-900: #641225;
+  --color-maroon-950: #3B0512;
 
-  body {
-    background-color: var(--brand-ivory);
-    color: #1c1917;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    overflow-x: hidden;
-  }
+  --color-gold-50: #FBF9EF;
+  --color-gold-100: #F5F0D6;
+  --color-gold-200: #EBE0AC;
+  --color-gold-300: #DDCC7D;
+  --color-gold-400: #CDB44F;
+  --color-gold-500: #C5A059;
+  --color-gold-600: #A98236;
+  --color-gold-700: #856228;
+  --color-gold-800: #6A4D23;
+  --color-gold-900: #583F20;
+  --color-gold-950: #31210D;
 
-  h1, h2, h3, .font-serif {
-    font-family: 'Playfair Display', Georgia, serif;
-    letter-spacing: -0.015em;
-  }
+  --color-ivory: #FAF8F5;
+  --color-ivory-dark: #F3EFEA;
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   GLOBAL CSS RESET & DESIGN SYSTEM (Eliminates all browser defaults)
+   ========================================================================== */
+
+:root {
+  --brand-primary: #800020;
+  --brand-gold: #C5A059;
+  --brand-ivory: #FAF8F5;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #FAF8F5;
+  color: #1C1917;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Global Typography */
+h1, h2, h3, h4, h5, h6, .font-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+  letter-spacing: -0.015em;
+  color: #1C1917;
+}
+
+/* Global Anchor / Links - NO default blue, NO default underlines */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Global Buttons - Reset browser button styles */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid #800020;
+  outline-offset: 2px;
+}
+
+/* Global Form Inputs */
+input, select, textarea {
+  font-family: inherit;
+  color: #1C1917;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #800020;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: #F3EFEA;
@@ -38,23 +118,7 @@
   background: #800020;
 }
 
-/* Subtle Shimmer for Skeleton Loaders */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.skeleton-shimmer {
-  background: linear-gradient(90deg, #F3EFEA 25%, #E8E2D9 50%, #F3EFEA 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
-/* Custom luxury gold border effect */
+/* Custom Utilities */
 .border-gold-subtle {
   border-color: rgba(197, 160, 89, 0.3);
 }
@@ -62,4 +126,15 @@
 .bg-pattern-subtle {
   background-image: radial-gradient(rgba(197, 160, 89, 0.08) 1px, transparent 0);
   background-size: 24px 24px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #F3EFEA 25%, #E8E2D9 50%, #F3EFEA 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
 }

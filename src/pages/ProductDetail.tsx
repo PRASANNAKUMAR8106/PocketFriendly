@@ -7,6 +7,7 @@ import { formatINR, getDiscountBadge } from '../utils/currency';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { ProductCard } from '../components/product/ProductCard';
+import { personalizationService } from '../services/personalizationService';
 
 interface ContextType {
   onQuickView: (product: Product) => void;
@@ -42,6 +43,7 @@ export const ProductDetail: React.FC = () => {
           setProduct(prod);
           setSelectedImageIndex(0);
           setQuantity(1);
+          personalizationService.recordProductView(prod);
 
           // Record in recently viewed
           try {

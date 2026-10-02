@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, Truck, RotateCcw, Award, ChevronRight, Star, Heart } from 'lucide-react';
+import { ArrowRight, Sparkles, ShieldCheck, Truck, RotateCcw, Award, ChevronRight, Star, Heart, Copy, Check } from 'lucide-react';
 import { ProductCard } from '../components/product/ProductCard';
 import { useSettings } from '../context/SettingsContext';
 import { collectionsService } from '../services/collectionsService';
@@ -23,6 +23,7 @@ export const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [budgetBestsellers, setBudgetBestsellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [couponCopied, setCouponCopied] = useState(false);
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -205,32 +206,7 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. PROMOTIONAL BANNER: AFFORDABLE LUXURY CALLOUT */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-maroon-900 via-maroon-800 to-stone-900 text-white p-8 md:p-12 shadow-2xl border border-gold-500/20">
-          <div className="relative z-10 max-w-xl space-y-4">
-            <span className="inline-block px-3 py-1 bg-gold-500 text-stone-950 text-xs font-bold uppercase tracking-wider rounded">
-              Festive Promo Code: WELCOME10
-            </span>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight">
-              Get Extra 10% OFF on Your First Order
-            </h2>
-            <p className="text-xs md:text-sm text-stone-200 leading-relaxed">
-              Experience the grace of authentic Indian weaves without boutique markups. Use code <strong className="text-gold-300">WELCOME10</strong> at checkout on eligible orders above ₹1,499.
-            </p>
-            <div className="pt-2">
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gold-50 text-maroon-900 font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all active:scale-95"
-              >
-                Claim Offer & Shop Now <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. BESTSELLERS UNDER ₹1,999 */}
+      {/* 4. BESTSELLERS UNDER ₹1,999 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-stone-200">
           <div>
@@ -262,6 +238,157 @@ export const Home: React.FC = () => {
               onQuickView={onQuickView}
             />
           ))}
+        </div>
+      </section>
+
+      {/* 5. EDITORIAL BRAND STORY */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-stone-900 text-stone-100 rounded-3xl overflow-hidden shadow-2xl border border-stone-800 grid grid-cols-1 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-6 p-8 sm:p-12 lg:p-16 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-maroon-900/80 border border-gold-500/30 text-gold-300 text-xs font-semibold tracking-wider uppercase">
+              <Award className="w-3.5 h-3.5 text-gold-400" />
+              <span>Our Weaver Direct Promise</span>
+            </div>
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+              The Art of PocketFriendly: <br />
+              <span className="text-gold-400 italic">Luxury Without Middlemen</span>
+            </h2>
+            <p className="text-sm sm:text-base text-stone-300 leading-relaxed font-light">
+              In traditional fashion retail, a genuine handloom saree passes through up to four intermediaries—each marking up the price by 30-50% before it ever touches your wardrobe.
+            </p>
+            <p className="text-sm text-stone-400 leading-relaxed">
+              We partner directly with multigenerational master weavers across Varanasi, Kanchipuram, and Surat. By eliminating opulent showroom overheads and distributor layers, we bring bridal silks, festive brocades, and everyday cottons straight to your door at honest prices.
+            </p>
+            <div className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-stone-800 text-stone-300">
+              <div>
+                <p className="font-serif text-2xl font-bold text-gold-400">Zero</p>
+                <p className="text-xs text-stone-400">Middlemen Markup</p>
+              </div>
+              <div>
+                <p className="font-serif text-2xl font-bold text-gold-400">500+</p>
+                <p className="text-xs text-stone-400">Artisans Supported</p>
+              </div>
+              <div>
+                <p className="font-serif text-2xl font-bold text-gold-400">100%</p>
+                <p className="text-xs text-stone-400">Pure Craft Integrity</p>
+              </div>
+            </div>
+            <div className="pt-2">
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gold-300 hover:text-white transition-colors"
+              >
+                Discover Our Heritage Chronicles <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6 h-full min-h-[380px] lg:min-h-[520px] relative">
+            <img
+              src="https://images.unsplash.com/photo-1610030469668-935a8df2a201?auto=format&fit=crop&w=1200&q=80"
+              alt="Indian Handloom Loom Weaving"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-stone-900 via-transparent to-transparent opacity-80" />
+            <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-stone-950/85 backdrop-blur-md border border-stone-800 text-xs text-stone-300">
+              <span className="font-semibold text-white">Authentic Shuttle Weaving:</span> Delicate antique zari buttas hand-shuttled into fine warp and weft by traditional Indian weavers.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. PROMOTIONAL BANNER WITH 1-CLICK COPY */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-maroon-900 via-maroon-800 to-stone-900 text-white p-8 md:p-12 shadow-2xl border border-gold-500/30">
+          <div className="relative z-10 max-w-xl space-y-4">
+            <div className="inline-flex items-center gap-2">
+              <span className="px-3 py-1 bg-gold-500 text-stone-950 text-xs font-bold uppercase tracking-wider rounded-md">
+                Festive Welcome Offer
+              </span>
+              <span className="text-xs text-gold-300 font-medium">Limited Time Only</span>
+            </div>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight">
+              Get Flat 10% OFF on Your First Order
+            </h2>
+            <p className="text-xs md:text-sm text-stone-200 leading-relaxed">
+              Experience the grace of authentic Indian weaves without boutique markups. Use code <strong className="text-gold-300">WELCOME10</strong> at checkout on eligible orders above ₹1,499.
+            </p>
+            <div className="pt-3 flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText('WELCOME10');
+                  setCouponCopied(true);
+                  setTimeout(() => setCouponCopied(false), 2000);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-3 bg-stone-950 hover:bg-black text-gold-300 border border-gold-500/40 font-bold text-xs uppercase tracking-wider rounded-lg shadow transition-all active:scale-95"
+              >
+                {couponCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-300">Copied WELCOME10!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-gold-400" />
+                    <span>Copy Code: WELCOME10</span>
+                  </>
+                )}
+              </button>
+
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gold-50 text-maroon-900 font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition-all active:scale-95"
+              >
+                Shop Festive Sarees <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. TRUST STRIP */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-maroon-50 border border-maroon-200 text-maroon-800 flex items-center justify-center shrink-0">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wide">100% Authentic</h4>
+              <p className="text-[11px] text-stone-500">Genuine Handloom Weaves</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-maroon-50 border border-maroon-200 text-maroon-800 flex items-center justify-center shrink-0">
+              <Truck className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wide">Free Shipping</h4>
+              <p className="text-[11px] text-stone-500">All India on orders ₹999+</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-maroon-50 border border-maroon-200 text-maroon-800 flex items-center justify-center shrink-0">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wide">7-Day Easy Returns</h4>
+              <p className="text-[11px] text-stone-500">Hassle-free return policy</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-maroon-50 border border-maroon-200 text-maroon-800 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wide">Secure & COD</h4>
+              <p className="text-[11px] text-stone-500">Cash on Delivery Available</p>
+            </div>
+          </div>
         </div>
       </section>
 

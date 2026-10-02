@@ -5,6 +5,7 @@ import { Footer } from '../components/common/Footer';
 import { CartDrawer } from '../components/cart/CartDrawer';
 import { SearchModal } from '../components/common/SearchModal';
 import { QuickViewModal } from '../components/product/QuickViewModal';
+import { PersonalizationNudge } from '../components/common/PersonalizationNudge';
 import { Product } from '../types';
 
 export const CustomerLayout: React.FC = () => {
@@ -26,6 +27,7 @@ export const CustomerLayout: React.FC = () => {
       <CartDrawer />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+      <PersonalizationNudge />
     </div>
   );
 };
