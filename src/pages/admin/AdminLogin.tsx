@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isSupabaseConfigured } from '../../services/supabase';
 
 export const AdminLogin: React.FC = () => {
   const { login, logout, user, isAdmin } = useAuth();
@@ -56,7 +57,7 @@ export const AdminLogin: React.FC = () => {
       if (userRole !== 'admin' && userRole !== 'super_admin' && userRole !== 'manager') {
         // Authenticated customer attempted admin login: immediately terminate session
         await logout();
-        setError('Access Denied: This account does not have administrator privileges.');
+        setError('Access Denied: This account is authenticated but does not have administrator privileges. Please assign role = "admin" in database profiles or run public.bootstrap_first_admin(email).');
         setLoading(false);
         return;
       }
@@ -133,6 +134,18 @@ export const AdminLogin: React.FC = () => {
                 Enter your authorized credentials to access the administration dashboard.
               </p>
             </div>
+
+            {!isSupabaseConfigured && (
+              <div className="p-3.5 bg-amber-950/60 border border-amber-700/80 text-amber-200 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-300">Supabase Backend Not Connected</p>
+                  <p className="text-[11px] text-amber-400/90 leading-relaxed">
+                    The store is currently running with placeholder configuration. To sign in with an administrator account, set your real <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">VITE_SUPABASE_URL</code> and <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">VITE_SUPABASE_ANON_KEY</code> in your <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">.env</code> file.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="p-3.5 bg-rose-950/70 border border-rose-800 text-rose-300 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">

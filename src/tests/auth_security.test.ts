@@ -156,4 +156,36 @@ describe('Admin and Customer Authentication Security Matrix', () => {
       expect(res.error).toBe('Invalid email or password.');
     });
   });
+
+  describe('Supabase Error Message Resolution', () => {
+    function parseSupabaseAuthError(errorMsg?: string) {
+      const msg = errorMsg || '';
+      if (msg.toLowerCase().includes('email not confirmed')) {
+        return 'Email not confirmed. Please confirm your email address in Supabase (or check "Auto Confirm User" in the Supabase Dashboard).';
+      }
+      if (msg.toLowerCase().includes('invalid login credentials') || msg.toLowerCase().includes('invalid credentials')) {
+        return 'Invalid email or password.';
+      }
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network')) {
+        return 'Unable to connect to Supabase. Please verify your project URL and network connection.';
+      }
+      return msg || 'Invalid email or password.';
+    }
+
+    it('Translates "Email not confirmed" into clear actionable instruction', () => {
+      const err = parseSupabaseAuthError('Email not confirmed');
+      expect(err).toContain('Email not confirmed');
+      expect(err).toContain('Auto Confirm User');
+    });
+
+    it('Translates standard invalid credentials safely', () => {
+      const err = parseSupabaseAuthError('Invalid login credentials');
+      expect(err).toBe('Invalid email or password.');
+    });
+
+    it('Translates network connectivity failures', () => {
+      const err = parseSupabaseAuthError('TypeError: Failed to fetch');
+      expect(err).toContain('Unable to connect to Supabase');
+    });
+  });
 });

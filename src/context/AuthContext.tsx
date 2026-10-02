@@ -20,32 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dev environment verified test accounts (Used ONLY when Supabase connection is offline in DEV)
-const DEV_MOCK_ACCOUNTS: Record<string, { passwordHash: string; profile: UserProfile }> = {
-  'admin@pocketfriendlysarees.com': {
-    passwordHash: 'admin123',
-    profile: {
-      id: 'dev-admin-uuid-001',
-      email: 'admin@pocketfriendlysarees.com',
-      full_name: 'Store Administrator',
-      phone: '+91 98765 43210',
-      role: 'admin',
-      created_at: '2026-01-01T00:00:00Z',
-    },
-  },
-  'customer@pocketfriendlysarees.com': {
-    passwordHash: 'customer123',
-    profile: {
-      id: 'dev-customer-uuid-001',
-      email: 'customer@pocketfriendlysarees.com',
-      full_name: 'Regular Customer',
-      phone: '+91 98765 00000',
-      role: 'customer',
-      created_at: '2026-01-01T00:00:00Z',
-    },
-  },
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +46,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(profile);
         return profile;
       } else {
+        // Self-healing attempt: if profile row is missing, insert default customer profile
+        try {
+          await supabase.from('profiles').insert({
+            id: userId,
+            email,
+            full_name: email.split('@')[0],
+            role: 'customer',
+          });
+        } catch {
+          // Gracefully continue with in-memory fallback
+        }
+
         // Fallback: Default to customer role. NEVER assign admin without verified DB record.
         const defaultProfile: UserProfile = {
           id: userId,
@@ -138,44 +124,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = validation.cleanEmail;
     const cleanPassword = validation.cleanPassword!;
 
-    // 2. Real Supabase Authentication
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: cleanPassword,
-        });
-
-        if (error || !data.user) {
-          // Standard security response: do not reveal if email exists
-          return { success: false, error: 'Invalid email or password.' };
-        }
-
-        const profile = await fetchSupabaseProfile(data.user.id, data.user.email!);
-        return { success: true, user: profile || undefined };
-      } catch (err: any) {
-        return { success: false, error: 'Authentication service temporarily unavailable.' };
-      }
-    }
-
-    // 3. In production, unconfigured Supabase is an absolute block.
-    if (import.meta.env.PROD) {
+    // 2. Check if Supabase is properly configured in environment
+    if (!isSupabaseConfigured) {
       return {
         success: false,
-        error: 'Authentication failed. Supabase backend is not configured.',
+        error: 'Supabase backend is not configured. Please add valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.',
       };
     }
 
-    // 4. Strict Local Development Mock Mode (DEV ONLY)
-    // Only exact matching credentials from DEV_MOCK_ACCOUNTS can authenticate.
-    // Random emails and wrong passwords will ALWAYS fail.
-    const devAccount = DEV_MOCK_ACCOUNTS[cleanEmail];
-    if (!devAccount || devAccount.passwordHash !== cleanPassword) {
-      return { success: false, error: 'Invalid email or password.' };
-    }
+    // 3. Authenticate with Supabase Auth
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPassword,
+      });
 
-    setUser(devAccount.profile);
-    return { success: true, user: devAccount.profile };
+      if (error || !data.user) {
+        const msg = error?.message || '';
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          return {
+            success: false,
+            error: 'Email not confirmed. Please confirm your email address in Supabase (or check "Auto Confirm User" in the Supabase Dashboard).',
+          };
+        }
+        if (msg.toLowerCase().includes('invalid login credentials') || msg.toLowerCase().includes('invalid credentials')) {
+          return { success: false, error: 'Invalid email or password.' };
+        }
+        if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network')) {
+          return {
+            success: false,
+            error: 'Unable to connect to Supabase. Please verify your project URL and network connection.',
+          };
+        }
+        return { success: false, error: msg || 'Invalid email or password.' };
+      }
+
+      const profile = await fetchSupabaseProfile(data.user.id, data.user.email!);
+      return { success: true, user: profile || undefined };
+    } catch (err: any) {
+      return { success: false, error: 'Authentication service temporarily unavailable. Please try again later.' };
+    }
   };
 
   const signup = async (email: string, password: string, fullName: string): Promise<AuthResponse> => {
@@ -191,49 +179,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Password must be at least 6 characters long.' };
     }
 
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
+    if (!isSupabaseConfigured) {
+      return {
+        success: false,
+        error: 'Registration unavailable. Supabase backend is not configured in .env.',
+      };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: cleanPassword,
+        options: {
+          data: { full_name: cleanName },
+        },
+      });
+
+      if (error) return { success: false, error: error.message };
+
+      if (data.user) {
+        const profile: UserProfile = {
+          id: data.user.id,
           email: cleanEmail,
-          password: cleanPassword,
-          options: {
-            data: { full_name: cleanName },
-          },
-        });
-
-        if (error) return { success: false, error: error.message };
-
-        if (data.user) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            email: cleanEmail,
-            full_name: cleanName,
-            phone: null,
-            role: 'customer', // Security: User signups are ALWAYS 'customer'
-          };
-          setUser(profile);
-          return { success: true, user: profile };
-        }
-      } catch (err: any) {
-        return { success: false, error: err.message || 'Registration failed.' };
+          full_name: cleanName,
+          phone: null,
+          role: 'customer', // Security: User signups are ALWAYS 'customer'
+        };
+        setUser(profile);
+        return { success: true, user: profile };
       }
+      return { success: false, error: 'Signup did not return user details.' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Registration failed.' };
     }
-
-    if (import.meta.env.PROD) {
-      return { success: false, error: 'Registration service not configured.' };
-    }
-
-    // Dev local signup
-    const profile: UserProfile = {
-      id: `usr-${Date.now()}`,
-      email: cleanEmail,
-      full_name: cleanName,
-      phone: null,
-      role: 'customer', // Security: User signups are ALWAYS 'customer'
-      created_at: new Date().toISOString(),
-    };
-    setUser(profile);
-    return { success: true, user: profile };
   };
 
   const logout = async () => {

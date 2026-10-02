@@ -12,7 +12,7 @@ BEGIN
     AND role IN ('admin', 'super_admin', 'manager')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 2. ENABLE ROW LEVEL SECURITY ON ALL TABLES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

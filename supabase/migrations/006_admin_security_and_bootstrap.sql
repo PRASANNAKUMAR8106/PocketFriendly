@@ -53,6 +53,12 @@ WITH CHECK (
   (role = 'customer' OR public.is_admin())
 );
 
+-- Allow users to insert their own initial profile if the trigger did not run
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" 
+ON public.profiles FOR INSERT 
+WITH CHECK (auth.uid() = id AND role = 'customer');
+
 -- 4. HARDEN AUDIT LOGS RLS
 DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view audit logs" 
@@ -74,51 +80,69 @@ WITH CHECK (public.is_admin());
 
 -- 6. SECURE FIRST-ADMINISTRATOR BOOTSTRAP PROCEDURE
 -- This provides a safe, documented server-side method to promote the first administrator.
--- It CANNOT be abused once an administrator exists.
+-- It checks auth.users first, creates the profile if missing, and assigns the admin role.
 CREATE OR REPLACE FUNCTION public.bootstrap_first_admin(p_email TEXT)
 RETURNS JSONB AS $$
 DECLARE
   v_admin_count INTEGER;
-  v_target_user_id UUID;
+  v_auth_id UUID;
+  v_auth_email TEXT;
+  v_auth_meta JSONB;
 BEGIN
-  -- Check if any administrator currently exists
+  -- 1. Check if an administrator already exists
   SELECT COUNT(*) INTO v_admin_count 
   FROM public.profiles 
   WHERE role IN ('admin', 'super_admin');
 
-  -- If an administrator already exists, require caller to be an admin
+  -- If an administrator already exists, require caller to be an admin or postgres/service_role
   IF v_admin_count > 0 AND NOT public.is_admin() AND current_user NOT IN ('postgres', 'service_role') THEN
-    RAISE EXCEPTION 'Bootstrap denied: An administrator is already provisioned for this store. Access must be granted by an existing administrator.';
+    RAISE EXCEPTION 'Bootstrap denied: An administrator is already provisioned for this store. Additional administrators must be invited by an existing administrator.';
   END IF;
 
-  -- Find target profile by email
-  SELECT id INTO v_target_user_id 
-  FROM public.profiles 
+  -- 2. Verify that the user exists in Supabase Authentication (auth.users)
+  SELECT id, email, raw_user_meta_data 
+  INTO v_auth_id, v_auth_email, v_auth_meta
+  FROM auth.users 
   WHERE LOWER(email) = LOWER(TRIM(p_email));
 
-  IF v_target_user_id IS NULL THEN
-    RAISE EXCEPTION 'User with email % does not exist in profiles. User must register via Supabase Auth first.', p_email;
+  IF v_auth_id IS NULL THEN
+    RAISE EXCEPTION 'User "%" not found in auth.users. Please create this user under Supabase Dashboard -> Authentication -> Users first.', p_email;
   END IF;
 
-  -- Promote user to admin
-  UPDATE public.profiles 
-  SET role = 'admin', updated_at = NOW() 
-  WHERE id = v_target_user_id;
-
-  -- Log security event
-  INSERT INTO public.audit_logs (action, entity_type, entity_id, details)
+  -- 3. Upsert profile with admin role
+  INSERT INTO public.profiles (id, email, full_name, role, updated_at)
   VALUES (
-    'ADMIN_BOOTSTRAP',
-    'PROFILE',
-    v_target_user_id::text,
-    jsonb_build_object('promoted_email', p_email, 'promoted_by', current_user)
-  );
+    v_auth_id,
+    v_auth_email,
+    COALESCE(v_auth_meta->>'full_name', split_part(v_auth_email, '@', 1)),
+    'admin',
+    NOW()
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET role = 'admin',
+      email = EXCLUDED.email,
+      updated_at = NOW();
+
+  -- 4. Log security event (safely)
+  BEGIN
+    INSERT INTO public.audit_logs (action, entity_type, entity_id, details)
+    VALUES (
+      'ADMIN_BOOTSTRAP',
+      'PROFILE',
+      v_auth_id::text,
+      jsonb_build_object('promoted_email', p_email, 'promoted_by', current_user)
+    );
+  EXCEPTION WHEN OTHERS THEN
+    NULL; -- Avoid breaking if audit_logs table has not been created yet
+  END;
 
   RETURN jsonb_build_object(
     'success', true,
-    'message', 'User successfully promoted to Administrator.',
-    'email', p_email,
-    'user_id', v_target_user_id
+    'message', 'User successfully provisioned as Administrator.',
+    'email', v_auth_email,
+    'user_id', v_auth_id,
+    'role', 'admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
