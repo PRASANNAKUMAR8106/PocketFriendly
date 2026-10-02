@@ -1,35 +1,74 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, CheckCircle2, Sparkles, KeyRound } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const AdminLogin: React.FC = () => {
-  const { login, switchRole } = useAuth();
+  const { login, logout, user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState('admin@pocketfriendlysarees.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // If already authenticated as an authorized administrator, redirect immediately
+  useEffect(() => {
+    if (user && isAdmin) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, isAdmin, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
-    const res = await login(email, password, 'admin');
-    setLoading(false);
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
 
-    if (res.success) {
-      navigate('/admin');
-    } else {
-      setError(res.error || 'Invalid administrator credentials');
+    if (!cleanEmail && !cleanPassword) {
+      setError('Please enter your administrator email and password.');
+      return;
     }
-  };
+    if (!cleanEmail) {
+      setError('Please enter your administrator email.');
+      return;
+    }
+    if (!cleanPassword) {
+      setError('Please enter your password.');
+      return;
+    }
 
-  const handleInstantAdminAccess = () => {
-    switchRole('admin');
-    navigate('/admin');
+    setLoading(true);
+
+    try {
+      const res = await login(cleanEmail, cleanPassword);
+
+      if (!res.success || !res.user) {
+        setError(res.error || 'Invalid email or password.');
+        setLoading(false);
+        return;
+      }
+
+      // Strict role verification: only authorized admin roles can enter
+      const userRole = res.user.role;
+      if (userRole !== 'admin' && userRole !== 'super_admin' && userRole !== 'manager') {
+        // Authenticated customer attempted admin login: immediately terminate session
+        await logout();
+        setError('Access Denied: This account does not have administrator privileges.');
+        setLoading(false);
+        return;
+      }
+
+      // Success: proceed to the admin dashboard
+      const from = (location.state as any)?.from?.pathname || '/admin';
+      navigate(from, { replace: true });
+    } catch {
+      setError('An unexpected error occurred during authentication. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,7 +100,7 @@ export const AdminLogin: React.FC = () => {
                 Store Operations & Catalog Engine
               </h2>
               <p className="text-xs text-stone-400 leading-relaxed font-light">
-                Manage live saree collections, inventory thresholds, discount codes, customer orders, and storefront settings.
+                Secure management console for PocketFriendly Sarees. Authorized staff and administrators only.
               </p>
             </div>
           </div>
@@ -69,10 +108,10 @@ export const AdminLogin: React.FC = () => {
           <div className="z-10 pt-8 border-t border-stone-800/80 text-[11px] text-stone-400 space-y-2">
             <div className="flex items-center gap-2 text-stone-300">
               <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-              <span>Real-time Supabase Database Sync</span>
+              <span>Real-time Database Authentication</span>
             </div>
             <p className="text-stone-500 text-[10px]">
-              Session protected with Row-Level Security and role-based access control.
+              Protected with Row-Level Security and strict server-side role validation.
             </p>
           </div>
 
@@ -96,15 +135,16 @@ export const AdminLogin: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-3 bg-rose-950/70 border border-rose-800 text-rose-300 text-xs rounded-xl flex items-center gap-2">
-                <span>{error}</span>
+              <div className="p-3.5 bg-rose-950/70 border border-rose-800 text-rose-300 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                  Staff Email
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -113,7 +153,8 @@ export const AdminLogin: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@pocketfriendlysarees.com"
+                    placeholder="name@pocketfriendlysarees.com"
+                    autoComplete="email"
                     className="w-full pl-10 pr-3 py-2.5 text-xs bg-stone-950 border border-stone-700 rounded-xl text-white placeholder:text-stone-600 focus:outline-none focus:border-gold-400 transition-colors"
                   />
                 </div>
@@ -131,6 +172,7 @@ export const AdminLogin: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                     className="w-full pl-10 pr-3 py-2.5 text-xs bg-stone-950 border border-stone-700 rounded-xl text-white placeholder:text-stone-600 focus:outline-none focus:border-gold-400 transition-colors"
                   />
                 </div>
@@ -146,26 +188,7 @@ export const AdminLogin: React.FC = () => {
               </button>
             </form>
 
-            {/* Development-Only Shortcut (Completely excluded in production) */}
-            {import.meta.env.DEV && (
-              <div className="pt-4 border-t border-stone-800 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-stone-400">
-                  <span className="font-semibold text-gold-400 flex items-center gap-1">
-                    <KeyRound className="w-3.5 h-3.5" /> Local Dev Environment
-                  </span>
-                  <span className="text-[10px] text-stone-500">import.meta.env.DEV</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleInstantAdminAccess}
-                  className="w-full py-2.5 px-4 bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-gold-400" /> Instant 1-Click Dev Admin Access
-                </button>
-              </div>
-            )}
-
-            <div className="text-center text-xs text-stone-500 pt-2 border-t border-stone-800">
+            <div className="text-center text-xs text-stone-500 pt-4 border-t border-stone-800">
               <Link to="/" className="text-stone-400 hover:text-white transition-colors">
                 ← Return to PocketFriendly Sarees Storefront
               </Link>

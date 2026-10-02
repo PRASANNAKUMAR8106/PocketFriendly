@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -21,45 +21,49 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export const AdminLayout: React.FC = () => {
-  const { user, isAdmin, logout, switchRole } = useAuth();
+  const { user, isAdmin, isLoading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Guard: if user is not logged in or not admin, show access notice
+  // 1. Loading session state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-stone-900 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated: Redirect immediately to admin login
+  if (!user) {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+
+  // 3. Authenticated customer, but NOT an admin: Deny access strictly
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-stone-100">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-stone-200 shadow-xl text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center mx-auto">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-stone-950 text-stone-200">
+        <div className="max-w-md w-full bg-stone-900 p-8 rounded-2xl border border-stone-800 shadow-2xl text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-rose-950 border border-rose-800 text-rose-400 flex items-center justify-center mx-auto">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h2 className="font-serif text-xl font-bold text-stone-900">Admin Authorization Required</h2>
-          <p className="text-xs text-stone-600 leading-relaxed">
-            You must be logged in with administrative privileges to access the PocketFriendly Sarees backend.
+          <h2 className="font-serif text-xl font-bold text-white">Access Denied</h2>
+          <p className="text-xs text-stone-400 leading-relaxed">
+            Your account (<strong className="text-stone-300">{user.email}</strong>) does not have administrator privileges.
           </p>
           <div className="pt-2 flex flex-col gap-2.5">
-            <Link
-              to="/admin/login"
-              className="w-full py-2.5 bg-maroon-800 hover:bg-maroon-900 text-white text-xs uppercase tracking-wider font-bold rounded-lg shadow text-center transition-colors"
+            <button
+              onClick={() => logout()}
+              className="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-white text-xs uppercase tracking-wider font-bold rounded-lg transition-colors"
             >
-              Sign In with Staff Credentials
-            </Link>
-            {import.meta.env.DEV && (
-              <button
-                onClick={() => {
-                  switchRole('admin');
-                }}
-                className="w-full py-2 bg-gold-500/10 hover:bg-gold-500/20 text-gold-700 border border-gold-500/30 text-xs font-semibold rounded-lg transition-all"
-              >
-                Instant Dev Access (import.meta.env.DEV)
-              </button>
-            )}
+              Sign Out & Switch Account
+            </button>
             <Link
               to="/"
-              className="w-full py-2 text-stone-500 hover:text-stone-800 text-xs font-medium text-center"
+              className="w-full py-2 text-stone-400 hover:text-white text-xs font-medium text-center"
             >
-              ← Back to Storefront
+              ← Return to Storefront
             </Link>
           </div>
         </div>

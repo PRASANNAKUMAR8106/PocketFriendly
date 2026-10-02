@@ -178,16 +178,42 @@ npm test
 Expected output:
 ```
 ✓ src/tests/pricing.test.ts (7 tests)
+✓ src/tests/auth_security.test.ts (18 tests)
 ✓ src/tests/orders.test.ts (2 tests)
 ✓ src/tests/validation.test.ts (9 tests)
 
-Test Files  3 passed (3)
-     Tests  18 passed (18)
+Test Files  4 passed (4)
+     Tests  36 passed (36)
 ```
 
 ---
 
-## 🚢 8. Production Build & Deployment
+## 🔐 8. Administrator Provisioning & Secure Bootstrap
+
+To guarantee production security, **self-service administrator promotion is strictly impossible**. Customers cannot elevate themselves to admin privileges through the client or API.
+
+### Step-by-Step Procedure to Create the First Store Administrator:
+
+1. **Create the User Account in Supabase**:
+   - Option A: Have the staff member sign up via `/register` or your Supabase Dashboard (`Authentication -> Users -> Invite / Add User`).
+   - Option B: Use the Supabase CLI / Auth API.
+
+2. **Execute Database Bootstrap (SQL Editor or Migration 006)**:
+   In your Supabase SQL Editor, execute the secure bootstrap function:
+   ```sql
+   SELECT public.bootstrap_first_admin('your-admin-email@yourdomain.com');
+   ```
+   *Security Note*: This function only executes if no administrator currently exists in the store, or when called by a verified super-administrator / service role. Once provisioned, further admin grants must be assigned by existing administrators.
+
+3. **Verify Admin Access**:
+   - Navigate to `/admin/login`
+   - Enter your email and password
+   - Verify immediate redirect to `/admin` dashboard
+   - Unauthenticated or non-admin users are strictly blocked and presented with `Access Denied`.
+
+---
+
+## 🚢 9. Production Build & Deployment
 
 ### Build Locally
 ```bash
@@ -195,7 +221,7 @@ npm run build
 ```
 This produces an optimized production bundle in `dist/` with vendor code-splitting:
 - Chunks for `vendor-react`, `vendor-supabase`, `vendor-icons`, and application code.
-- Gzipped CSS: ~3.2 kB
+- Gzipped CSS: ~11 kB
 - HTML with Open Graph and JSON-LD structured data.
 
 ### Deploy to Vercel
@@ -209,13 +235,15 @@ This produces an optimized production bundle in `dist/` with vendor code-splitti
 
 ---
 
-## 🛡️ 9. Security & Business Rules Implemented
+## 🛡️ 10. Security & Business Rules Implemented
 
-1. **Authoritative Server Pricing**: Final prices are calculated by PostgreSQL triggers and functions; client amounts are validated before order insertion.
-2. **Preventing Overselling**: Inventory rows are checked before placing an order; out-of-stock items cannot be purchased.
-3. **Historical Order Snapshots**: `order_items` stores historical snapshots of unit price, discount amount, product name, and SKU so subsequent edits to products never alter past order records.
-4. **Row Level Security (RLS)**: Customers can only view their own orders and addresses. Admin console routes and APIs are strictly restricted to users with `role IN ('admin', 'super_admin', 'manager')`.
-5. **No Exposed Secrets**: Payment secret keys remain on the backend / Supabase Edge Functions. Only the public Key ID is referenced in the frontend client.
+1. **Strict Database-Backed Role Verification**: Administrative privileges are verified against Supabase PostgreSQL `profiles.role` table, never trusted from frontend flags or localStorage.
+2. **Privilege Escalation Prevention**: Trigger `prevent_profile_role_escalation` denies any customer attempt to update their or anyone else's role.
+3. **No Evaluation Bypasses in Production**: All 1-click admin shortcuts, hardcoded passwords, and evaluation buttons are completely removed.
+4. **Authoritative Server Pricing**: Final prices are calculated by PostgreSQL triggers and functions; client amounts are validated before order insertion.
+5. **Preventing Overselling**: Inventory rows are checked before placing an order; out-of-stock items cannot be purchased.
+6. **Row Level Security (RLS)**: Customers can only view their own orders and addresses. Admin console routes and APIs are strictly restricted to users with `role IN ('admin', 'super_admin', 'manager')`.
+7. **No Exposed Secrets**: Payment secret keys remain on the backend / Supabase Edge Functions. Only the public Key ID is referenced in the frontend client.
 
 ---
 

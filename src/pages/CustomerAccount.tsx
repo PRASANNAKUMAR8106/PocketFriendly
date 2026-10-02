@@ -21,12 +21,7 @@ export const CustomerAccount: React.FC = () => {
     }
 
     ordersService.getOrders({ userId: user.id }).then((res) => {
-      // If none under user.id, show all local orders for demo continuity
-      if (res.length === 0) {
-        ordersService.getOrders().then(all => setOrders(all));
-      } else {
-        setOrders(res);
-      }
+      setOrders(res);
       setLoading(false);
     });
   }, [user, navigate]);

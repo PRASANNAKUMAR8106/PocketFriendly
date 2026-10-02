@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Mail, User, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
@@ -19,21 +19,14 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    const res = await login(email, password, 'customer');
+    const res = await login(email, password);
     setLoading(false);
 
     if (res.success) {
       navigate('/account');
     } else {
-      setError(res.error || 'Failed to log in. Please check your credentials.');
+      setError(res.error || 'Invalid email or password.');
     }
-  };
-
-  const handleQuickDemoCustomer = async () => {
-    setLoading(true);
-    await login('customer@pocketfriendlysarees.com', 'demo123', 'customer');
-    setLoading(false);
-    navigate('/account');
   };
 
   return (
@@ -96,17 +89,6 @@ export const LoginPage: React.FC = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        {/* Quick Demo Login Option */}
-        <div className="pt-2 border-t border-stone-100">
-          <button
-            type="button"
-            onClick={handleQuickDemoCustomer}
-            className="w-full py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-lg border border-stone-200 transition-colors flex items-center justify-center gap-2"
-          >
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" /> 1-Click Customer Demo Sign In
-          </button>
-        </div>
 
         <div className="text-center text-xs text-stone-500 pt-2 space-y-2">
           <p>
