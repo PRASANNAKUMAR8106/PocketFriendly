@@ -123,7 +123,7 @@ export const Home: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-maroon-800 font-bold mb-1">
               <span className="w-2 h-2 rounded-full bg-maroon-800 animate-pulse" />
-              Admin Curated • Just Arrived
+              Handpicked Weaves • Just Arrived
             </div>
             <h2 className="font-serif text-2xl md:text-4xl font-bold text-stone-900">
               {latestCollection?.title || 'The Royal Festive Collection'}
@@ -158,7 +158,7 @@ export const Home: React.FC = () => {
             ))
           ) : (
             <div className="col-span-full py-12 text-center text-stone-500 text-sm">
-              Latest collection will appear here. Manageable via Admin Dashboard.
+              New festive weaves arriving soon. Discover our heritage collection.
             </div>
           )}
         </div>

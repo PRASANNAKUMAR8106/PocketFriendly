@@ -37,10 +37,10 @@ export const LoginPage: React.FC = () => {
             P
           </div>
           <h1 className="font-serif text-2xl font-bold text-stone-900">
-            Customer Sign In
+            Welcome Back
           </h1>
           <p className="text-xs text-stone-500">
-            Sign in to track orders, manage saved delivery addresses, and view your wishlist.
+            Sign in to your PocketFriendly Sarees account.
           </p>
         </div>
 
@@ -67,7 +67,12 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-stone-700">Password</label>
+              <Link to="/contact" className="text-[11px] text-stone-500 hover:text-maroon-800">
+                Forgot password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -90,17 +95,11 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="text-center text-xs text-stone-500 pt-2 space-y-2">
+        <div className="text-center text-xs text-stone-500 pt-2">
           <p>
             Don't have an account?{' '}
             <Link to="/register" className="text-maroon-800 font-bold hover:underline">
               Create an account
-            </Link>
-          </p>
-          <p>
-            Are you a store manager?{' '}
-            <Link to="/admin/login" className="text-stone-700 font-medium hover:underline">
-              Admin Portal →
             </Link>
           </p>
         </div>

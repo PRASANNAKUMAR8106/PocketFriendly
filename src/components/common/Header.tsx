@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Heart, ShoppingBag, User, Menu, X, Shield, Sparkles, ChevronDown, LogOut, Package } from 'lucide-react';
+import { Search, Heart, ShoppingBag, User, Menu, X, Sparkles, ChevronDown, LogOut, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { itemCount, setIsCartOpen } = useCart();
   const { wishlistCount } = useWishlist();
   const { settings } = useSettings();
@@ -148,11 +148,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
                           {user.full_name || 'Customer'}
                         </p>
                         <p className="text-[11px] text-stone-500 truncate">{user.email}</p>
-                        {isAdmin && (
-                          <span className="inline-block mt-1 text-[10px] bg-maroon-100 text-maroon-800 font-bold px-1.5 py-0.5 rounded">
-                            Admin Role
-                          </span>
-                        )}
                       </div>
                       <Link
                         to="/account"
@@ -166,17 +161,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
                       >
                         <Package className="w-4 h-4 text-stone-400" /> My Orders
                       </Link>
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-maroon-800 hover:bg-maroon-50"
-                        >
-                          <Shield className="w-4 h-4 text-maroon-800" /> Admin Dashboard
-                        </Link>
-                      )}
+                      <Link
+                        to="/wishlist"
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-stone-700 hover:bg-stone-50"
+                      >
+                        <Heart className="w-4 h-4 text-stone-400" /> My Wishlist
+                      </Link>
                       <button
                         onClick={logout}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 text-left"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 text-left border-t border-stone-100"
                       >
                         <LogOut className="w-4 h-4" /> Sign Out
                       </button>
@@ -187,14 +180,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
                         to="/login"
                         className="block px-4 py-2 text-xs font-semibold text-stone-900 hover:bg-stone-50"
                       >
-                        Customer Login / Register
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="block px-4 py-2 text-xs text-stone-600 hover:bg-stone-50"
+                      >
+                        Create Account
                       </Link>
                       <div className="border-t border-stone-100 my-1"></div>
                       <Link
-                        to="/admin/login"
-                        className="flex items-center gap-2 px-4 py-2 text-xs text-maroon-800 hover:bg-maroon-50 font-medium"
+                        to="/account/orders"
+                        className="block px-4 py-2 text-xs text-stone-600 hover:bg-stone-50"
                       >
-                        <Shield className="w-3.5 h-3.5" /> Admin Portal
+                        Track Order
+                      </Link>
+                      <Link
+                        to="/wishlist"
+                        className="block px-4 py-2 text-xs text-stone-600 hover:bg-stone-50"
+                      >
+                        My Wishlist
                       </Link>
                     </>
                   )}
@@ -235,11 +240,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSearch }) => {
             <Link to="/offers" className="py-2 border-b border-stone-100 text-emerald-700">Special Offers</Link>
             <Link to="/about" className="py-2 border-b border-stone-100">About Us</Link>
             <Link to="/contact" className="py-2">Contact</Link>
-            {isAdmin && (
-              <Link to="/admin" className="mt-2 py-2.5 px-4 bg-maroon-800 text-white rounded text-center font-bold flex items-center justify-center gap-2">
-                <Shield className="w-4 h-4" /> Go to Admin Dashboard
-              </Link>
-            )}
           </nav>
         </div>
       )}

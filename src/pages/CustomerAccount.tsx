@@ -7,7 +7,7 @@ import { Order } from '../types';
 import { formatINR } from '../utils/currency';
 
 export const CustomerAccount: React.FC = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -50,14 +50,6 @@ export const CustomerAccount: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="px-4 py-2 bg-maroon-800 hover:bg-maroon-900 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5"
-            >
-              <ShieldCheck className="w-4 h-4 text-gold-400" /> Admin Dashboard
-            </Link>
-          )}
           <button
             onClick={handleLogout}
             className="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
@@ -114,10 +106,10 @@ export const CustomerAccount: React.FC = () => {
                         ? 'bg-rose-100 text-rose-800'
                         : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {ord.order_status.replace(/_/g, ' ')}
+                      {(ord.order_status || 'placed').replace(/_/g, ' ')}
                     </span>
                     <span className="bg-stone-100 text-stone-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">
-                      Payment: {ord.payment_status}
+                      Payment: {(ord.payment_status || 'pending').replace(/_/g, ' ')}
                     </span>
                   </div>
                 </div>
