@@ -14,9 +14,13 @@ export const PersonalizationNudge: React.FC = () => {
   const [nudge, setNudge] = useState<NudgeType | null>(null);
   const [visible, setVisible] = useState(false);
 
-  // Do not show on admin or checkout pages
+  // Strict route suppression: never interrupt registration, login, account, admin, or checkout
   const isHiddenRoute =
     location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/account') ||
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/auth' ||
     location.pathname === '/checkout' ||
     location.pathname === '/order-confirmation';
 
@@ -80,8 +84,6 @@ export const PersonalizationNudge: React.FC = () => {
     switch (nudge.type) {
       case 'cart_abandoned':
         return <ShoppingBag className="w-4 h-4 text-maroon-800" />;
-      case 'low_stock':
-        return <Flame className="w-4 h-4 text-amber-600" />;
       case 'wishlist_reminder':
         return <Heart className="w-4 h-4 text-maroon-800 fill-maroon-800" />;
       default:

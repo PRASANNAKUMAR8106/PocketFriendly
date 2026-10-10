@@ -7,6 +7,7 @@ export interface AuthResponse {
   success: boolean;
   error?: string;
   user?: UserProfile;
+  requiresEmailConfirmation?: boolean;
 }
 
 interface AuthContextType {
@@ -172,7 +173,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanName = (fullName || '').trim();
 
     if (!cleanEmail || !cleanPassword || !cleanName) {
-      return { success: false, error: 'All fields are required.' };
+      return { success: false, error: 'Full name, email address, and password are all required.' };
+    }
+
+    if (cleanName.length < 2) {
+      return { success: false, error: 'Please enter your full name (at least 2 characters).' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return { success: false, error: 'Please enter a valid email address.' };
     }
 
     if (cleanPassword.length < 6) {
@@ -182,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isSupabaseConfigured) {
       return {
         success: false,
-        error: 'Registration unavailable. Supabase backend is not configured in .env.',
+        error: 'Registration is currently unavailable because the Supabase backend is not configured. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env.local.',
       };
     }
 
@@ -191,11 +201,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: cleanEmail,
         password: cleanPassword,
         options: {
-          data: { full_name: cleanName },
+          data: {
+            full_name: cleanName,
+            role: 'customer', // Security: User signups are ALWAYS 'customer'
+          },
         },
       });
 
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('unique constraint') || msg.includes('user already in use')) {
+          return { success: false, error: 'An account with this email address already exists. Please sign in instead.' };
+        }
+        if (msg.includes('weak') || (msg.includes('password') && msg.includes('short'))) {
+          return { success: false, error: 'Password is too weak. Please use at least 6 characters with a combination of letters and numbers.' };
+        }
+        if (msg.includes('failed to fetch') || msg.includes('network')) {
+          return { success: false, error: 'Unable to connect to Supabase. Please verify your network connection and Supabase URL.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      // Check if user already exists (Supabase obfuscates duplicate emails with empty identities when email confirmation is active)
+      if (data.user && !data.session && data.user.identities && data.user.identities.length === 0) {
+        return {
+          success: false,
+          error: 'An account with this email address already exists. Please sign in instead.',
+        };
+      }
 
       if (data.user) {
         const profile: UserProfile = {
@@ -205,12 +238,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: null,
           role: 'customer', // Security: User signups are ALWAYS 'customer'
         };
+
+        // Self-heal/insert profile row in database
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: cleanEmail,
+            full_name: cleanName,
+            role: 'customer',
+          }, { onConflict: 'id' });
+        } catch {
+          // Trigger may have already created profile
+        }
+
+        // Handle case where Supabase project requires email confirmation before session is granted
+        if (!data.session) {
+          return {
+            success: true,
+            requiresEmailConfirmation: true,
+            error: `Account created successfully! Please check your email (${cleanEmail}) to confirm your account before signing in.`,
+            user: profile,
+          };
+        }
+
         setUser(profile);
         return { success: true, user: profile };
       }
       return { success: false, error: 'Signup did not return user details.' };
     } catch (err: any) {
-      return { success: false, error: err.message || 'Registration failed.' };
+      const msg = err?.message || '';
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network')) {
+        return { success: false, error: 'Unable to connect to Supabase. Please verify your network connection and Supabase URL.' };
+      }
+      return { success: false, error: msg || 'Registration failed.' };
     }
   };
 

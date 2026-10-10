@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isSupabaseConfigured, hasServiceRoleViolation, supabaseConfigStatus } from '../../services/supabase';
+import { checkSupabaseHealth } from '../../utils/supabaseHealth';
 
 export const AdminLogin: React.FC = () => {
   const { login, logout, user, isAdmin } = useAuth();
@@ -13,6 +14,23 @@ export const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [healthChecking, setHealthChecking] = useState(false);
+  const [backendVerified, setBackendVerified] = useState<boolean | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      setHealthChecking(true);
+      checkSupabaseHealth().then((res) => {
+        setHealthChecking(false);
+        setBackendVerified(res.connected);
+        if (!res.connected) {
+          setHealthError(res.error || 'Connection failed: Project unreachable.');
+        }
+      });
+    }
+  }, []);
 
   // If already authenticated as an authorized administrator, redirect immediately
   useEffect(() => {
@@ -168,13 +186,33 @@ export const AdminLogin: React.FC = () => {
             )}
 
             {isSupabaseConfigured && (
-              <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs rounded-xl flex items-center justify-between animate-in fade-in duration-200">
+              <div
+                className={`p-3 border text-xs rounded-xl flex items-center justify-between animate-in fade-in duration-200 ${
+                  backendVerified
+                    ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
+                    : backendVerified === false
+                    ? 'bg-amber-950/50 border-amber-800/60 text-amber-300'
+                    : 'bg-stone-900 border-stone-800 text-stone-300'
+                }`}
+              >
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-medium">Supabase Backend Connected</span>
+                  {backendVerified ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  ) : backendVerified === false ? (
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-gold-400 animate-pulse shrink-0" />
+                  )}
+                  <span className="font-medium">
+                    {healthChecking
+                      ? 'Verifying live Supabase database ping...'
+                      : backendVerified
+                      ? 'Supabase Connected & Verified (Live Database Ping OK)'
+                      : `Supabase Unreachable: ${healthError || 'Unable to query tables'}`}
+                  </span>
                 </div>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
-                  {supabaseConfigStatus.keyType} key active
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-stone-950 text-stone-300 border border-stone-800 shrink-0 ml-2">
+                  {supabaseConfigStatus.keyType} key
                 </span>
               </div>
             )}

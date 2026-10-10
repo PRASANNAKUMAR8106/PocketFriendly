@@ -7,6 +7,8 @@ import { formatINR } from '../utils/currency';
 export const CartPage: React.FC = () => {
   const {
     items,
+    itemCount,
+    uniqueItemCount,
     subtotal,
     shippingFee,
     couponDiscount,
@@ -18,6 +20,7 @@ export const CartPage: React.FC = () => {
     updateQuantity,
     applyCoupon,
     removeCoupon,
+    clearCart,
   } = useCart();
 
   const [couponCode, setCouponCode] = useState('');
@@ -63,9 +66,22 @@ export const CartPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="font-serif text-3xl font-bold text-stone-900 mb-8 pb-4 border-b border-stone-200">
-        Shopping Bag ({items.length} {items.length === 1 ? 'item' : 'items'})
-      </h1>
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-stone-200">
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-stone-900">
+            Shopping Bag
+          </h1>
+          <p className="text-xs text-stone-500 mt-1">
+            {itemCount} {itemCount === 1 ? 'saree' : 'sarees'} ({uniqueItemCount} {uniqueItemCount === 1 ? 'item' : 'items'}) in your bag
+          </p>
+        </div>
+        <button
+          onClick={clearCart}
+          className="text-xs text-stone-500 hover:text-rose-600 border border-stone-200 hover:border-rose-300 px-3 py-1.5 rounded-lg transition-colors font-medium"
+        >
+          Clear Shopping Bag
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Cart Items List */}

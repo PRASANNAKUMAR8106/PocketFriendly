@@ -7,7 +7,8 @@ import { useAuth } from './AuthContext';
 
 interface CartContextType {
   items: CartItem[];
-  itemCount: number;
+  itemCount: number;         // Total saree units count in cart
+  uniqueItemCount: number;   // Total distinct saree products in cart
   subtotal: number;
   shippingFee: number;
   couponDiscount: number;
@@ -27,17 +28,43 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_CART_KEY = 'pfs_cart_items';
-const LOCAL_STORAGE_COUPON_KEY = 'pfs_applied_coupon';
+export const LOCAL_STORAGE_CART_KEY = 'pfs_cart_items';
+export const LOCAL_STORAGE_COUPON_KEY = 'pfs_applied_coupon';
+export const LOCAL_STORAGE_CART_ACTIVITY_KEY = 'pfs_cart_last_activity_ts';
+
+export const sanitizeCartItem = (raw: any): CartItem | null => {
+  if (!raw || !raw.product || typeof raw.product !== 'object' || !raw.product.id) {
+    return null;
+  }
+  const rawQty = Number(raw.quantity);
+  if (!Number.isFinite(rawQty) || rawQty <= 0) {
+    return null;
+  }
+  const quantity = Math.floor(rawQty);
+  const maxStock = typeof raw.product.stock_quantity === 'number' && raw.product.stock_quantity > 0
+    ? raw.product.stock_quantity
+    : 50;
+  return {
+    id: raw.id || `ci-${Date.now()}-${raw.product.id}`,
+    product_id: raw.product_id || raw.product.id,
+    product: raw.product,
+    quantity: Math.min(quantity, maxStock),
+  };
+};
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.map(sanitizeCartItem).filter(Boolean) as CartItem[];
+        }
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to parse cart items:', e);
     }
     return [];
   });
@@ -81,6 +108,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(items));
+      if (items.length > 0) {
+        localStorage.setItem(LOCAL_STORAGE_CART_ACTIVITY_KEY, Date.now().toString());
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_CART_ACTIVITY_KEY);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -95,6 +127,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [appliedCoupon]);
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const uniqueItemCount = items.length;
 
   // Authoritative calculation
   const totals = calculateOrderTotals(
@@ -201,6 +234,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => {
     setItems([]);
     setAppliedCoupon(null);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_CART_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_COUPON_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_CART_ACTIVITY_KEY);
+    } catch {
+      // Ignore
+    }
   };
 
   return (
@@ -208,6 +248,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         items,
         itemCount,
+        uniqueItemCount,
         subtotal: totals.subtotal,
         shippingFee: totals.shippingFee,
         couponDiscount: totals.couponDiscount,

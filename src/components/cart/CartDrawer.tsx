@@ -19,6 +19,7 @@ export const CartDrawer: React.FC = () => {
     updateQuantity,
     applyCoupon,
     removeCoupon,
+    clearCart,
     isCartOpen,
     setIsCartOpen,
   } = useCart();
@@ -71,16 +72,27 @@ export const CartDrawer: React.FC = () => {
             <div className="flex items-center gap-2.5">
               <ShoppingBag className="w-5 h-5 text-maroon-800" />
               <h2 className="font-serif text-lg font-bold text-stone-900 tracking-tight">
-                Shopping Bag <span className="text-maroon-800 font-sans text-sm font-semibold">({itemCount})</span>
+                Shopping Bag <span className="text-maroon-800 font-sans text-sm font-semibold">({itemCount} {itemCount === 1 ? 'item' : 'items'})</span>
               </h2>
             </div>
-            <button
-              onClick={() => setIsCartOpen(false)}
-              className="p-2 rounded-full hover:bg-stone-200/70 text-stone-500 hover:text-stone-900 transition-colors"
-              aria-label="Close Shopping Bag"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              {items.length > 0 && (
+                <button
+                  onClick={clearCart}
+                  className="text-[11px] text-stone-400 hover:text-rose-600 transition-colors px-2 py-1 font-medium"
+                  title="Empty Cart"
+                >
+                  Clear Bag
+                </button>
+              )}
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="p-2 rounded-full hover:bg-stone-200/70 text-stone-500 hover:text-stone-900 transition-colors"
+                aria-label="Close Shopping Bag"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Free Shipping Progress Indicator */}
