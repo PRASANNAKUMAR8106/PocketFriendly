@@ -107,39 +107,60 @@ The application will start at `http://localhost:5173`.
 
 ---
 
-## 🗄️ 5. Supabase Production Setup
+## 🗄️ 5. Supabase Production Setup & Connection Guide
 
-### Step 1: Create a Supabase Project
-1. Go to [https://supabase.com](https://supabase.com) and create a new project.
-2. Note down your **Project URL** and **Anon / Public Key** from `Project Settings -> API`.
+Follow these exact steps to connect PocketFriendly Sarees to your real Supabase project:
 
-### Step 2: Run SQL Migrations
+### Step-by-Step Connection Instructions:
+
+1. **Open Supabase Dashboard**:
+   Navigate to [https://supabase.com/dashboard](https://supabase.com/dashboard) and sign in.
+
+2. **Select Your Project**:
+   Click on your **PocketFriendly Sarees** project.
+
+3. **Find Your Project URL**:
+   In the left sidebar, click **Project Settings** (gear icon) ➔ **API**.
+   Under the **Project URL** section, copy the URL (e.g. `https://abcdefghijklm.supabase.co`).
+
+4. **Find the Browser-Safe Publishable/Anon Key**:
+   Under the **Project API keys** section, copy the `anon` `public` key.
+   > ⚠️ **CRITICAL SECURITY RULE**: **NEVER copy or expose the `service_role` secret key!** The frontend client only requires and permits the public `anon` key. The `service_role` key must remain strictly private in Supabase / Edge Functions.
+
+5. **Create or Open Your Local `.env` File**:
+   In the root directory of this project (`c:\Users\Prasanna kumar\OneDrive\Desktop\PocketFriendly\`), ensure your `.env` file exists (copied from `.env.example`).
+
+6. **Add the Exact Required Variables**:
+   Paste your real Supabase URL and anon key:
+   ```env
+   # Required Supabase Project Connection
+   VITE_SUPABASE_URL=https://abcdefghijklm.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your_actual_anon_key_here
+
+   # Payment Gateway (Razorpay Public Key)
+   VITE_RAZORPAY_KEY_ID=rzp_test_yourkeyhere
+
+   # Store Metadata
+   VITE_APP_NAME="PocketFriendly Sarees"
+   VITE_SITE_URL=http://localhost:5173
+   ```
+
+7. **Restart the Vite Development Server**:
+   In your terminal, restart Vite so the new environment variables take effect:
+   ```bash
+   npm run dev
+   ```
+   - As soon as valid credentials are provided, the `"Supabase Backend Not Connected"` notice on `/admin/login` will disappear automatically.
+   - The application will connect directly to your real Supabase database for catalog, cart, wishlist, orders, authentication, and RLS.
+
+### Execute Database Migrations:
 In your Supabase Dashboard, open the **SQL Editor** and execute the migration files located in `supabase/migrations/` in order:
-
-1. `001_initial_schema.sql` (Creates all tables: profiles, products, categories, orders, order_items, discounts, etc.)
-2. `002_rls_policies.sql` (Enables Row Level Security on all tables with strict customer/admin boundaries)
-3. `003_functions_and_triggers.sql` (Installs price recalculation trigger, `place_order_atomic` function, and user signup hooks)
-4. `004_seed_data.sql` (Populates authentic saree catalog with high-resolution images, collections, and discounts)
-5. `005_storage_buckets.sql` (Creates storage buckets: `product-images`, `collections`, `banners`, `hero-images`)
-
-### Step 3: Configure Environment Variables
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-Fill in your real Supabase credentials from your Supabase Dashboard (`Project Settings -> API`):
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...your-actual-anon-key...
-VITE_RAZORPAY_KEY_ID=rzp_test_yourkeyhere
-VITE_APP_NAME="PocketFriendly Sarees"
-VITE_SITE_URL=http://localhost:5173
-```
-
-> ⚠️ **Important**: If `.env` contains placeholder values (`placeholder-pfs.supabase.co`), the `/admin/login` page will display a warning banner and reject sign-in attempts with a notification indicating that Supabase is not connected. Always configure valid credentials in `.env`.
-
-### Step 4: Create the First Administrator Account
-Follow the comprehensive guide in **Section 8: Administrator Provisioning & Secure Bootstrap** below.
+1. `001_initial_schema.sql` (Creates all 17 tables)
+2. `002_rls_policies.sql` (Enables Row Level Security on all tables)
+3. `003_functions_and_triggers.sql` (Price calculation triggers, signup hooks, and atomic ordering)
+4. `004_seed_data.sql` (Populates authentic saree catalog)
+5. `005_storage_buckets.sql` (Creates storage buckets)
+6. `006_admin_security_and_bootstrap.sql` & `007_first_admin_setup.sql` (Admin security hardening & bootstrap function)
 
 ---
 

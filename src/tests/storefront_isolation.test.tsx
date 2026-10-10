@@ -290,4 +290,23 @@ describe('Storefront & Admin Isolation Verification (TEST SCENARIOS 1 - 10)', ()
     expect(screen.getByText('PocketFriendly Sarees • Administration')).toBeDefined();
     expect(screen.getByText('Live Store Engine')).toBeDefined();
   });
+
+  it('TEST 11: Logged-out unauthenticated user navigating to /admin/dashboard is DENIED access and redirected to login', () => {
+    mockCurrentUser = null;
+    mockIsAdmin = false;
+
+    render(
+      <MemoryRouter initialEntries={['/admin/dashboard']}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<div>Admin Secret Dashboard</div>} />
+          </Route>
+          <Route path="/admin/login" element={<div>Admin Staff Login Screen</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('Admin Secret Dashboard')).toBeNull();
+    expect(screen.getByText('Admin Staff Login Screen')).toBeDefined();
+  });
 });

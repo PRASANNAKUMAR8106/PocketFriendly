@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { CartItem, Product, DiscountCoupon } from '../types';
 import { calculateOrderTotals } from '../utils/pricing';
 import { discountsService } from '../services/discountsService';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
+import { useAuth } from './AuthContext';
 
 interface CartContextType {
   items: CartItem[];
@@ -29,6 +31,7 @@ const LOCAL_STORAGE_CART_KEY = 'pfs_cart_items';
 const LOCAL_STORAGE_COUPON_KEY = 'pfs_applied_coupon';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
@@ -38,6 +41,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return [];
   });
+
+  // Sync cart from Supabase when user logs in
+  useEffect(() => {
+    if (user && isSupabaseConfigured) {
+      supabase
+        .from('carts')
+        .select('id, cart_items(id, product_id, quantity, product:products(*, images:product_images(*), category:categories(*)))')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data?.cart_items && data.cart_items.length > 0) {
+            const dbItems: CartItem[] = data.cart_items.map((ci: any) => ({
+              id: ci.id,
+              product_id: ci.product_id,
+              product: ci.product,
+              quantity: ci.quantity,
+            })).filter((i: any) => Boolean(i.product));
+            if (dbItems.length > 0) {
+              setItems(dbItems);
+            }
+          }
+        });
+    }
+  }, [user]);
 
   const [appliedCoupon, setAppliedCoupon] = useState<DiscountCoupon | null>(() => {
     try {

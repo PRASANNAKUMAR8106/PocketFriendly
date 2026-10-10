@@ -46,19 +46,6 @@ export const AdminCustomers: React.FC = () => {
         }
       });
 
-      // If no orders yet, add demo customer
-      if (map.size === 0) {
-        map.set('ananya@example.com', {
-          email: 'ananya@example.com',
-          name: 'Ananya Sharma',
-          phone: '9876543210',
-          city: 'Bangalore',
-          orderCount: 2,
-          totalSpent: 4923.45,
-          lastOrderDate: new Date().toISOString(),
-        });
-      }
-
       setCustomers(Array.from(map.values()));
       setLoading(false);
     });

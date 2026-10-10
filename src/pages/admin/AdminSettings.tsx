@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
-import { Settings, Save, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, CheckCircle2, Database, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { auditService } from '../../services/auditService';
 import { SiteSettings } from '../../types';
+import { isSupabaseConfigured } from '../../services/supabase';
+import { checkSupabaseHealth, HealthCheckResult } from '../../utils/supabaseHealth';
 
 export const AdminSettings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const [formData, setFormData] = useState<SiteSettings>(settings);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null);
+
+  const runHealthCheck = async () => {
+    setHealthLoading(true);
+    try {
+      const res = await checkSupabaseHealth();
+      setHealthResult(res);
+    } catch {
+      // Ignore
+    } finally {
+      setHealthLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +51,75 @@ export const AdminSettings: React.FC = () => {
         {saved && (
           <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Settings successfully saved!
+          </div>
+        )}
+      </div>
+
+      {/* Supabase Database Connection Diagnostics */}
+      <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <Database className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-serif text-base font-bold text-stone-900">
+                Supabase Backend & Database Integration
+              </h2>
+              <p className="text-[11px] text-stone-500">
+                Verify real-time PostgreSQL database connectivity, tables, and authentication health.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={runHealthCheck}
+            disabled={healthLoading}
+            className="px-3.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
+            {healthLoading ? 'Testing Live Connection...' : 'Test Connection'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-stone-50 rounded-lg border border-stone-200">
+            <span className="text-[11px] text-stone-500 block mb-1">Configuration Status</span>
+            {isSupabaseConfigured ? (
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
+                <ShieldCheck className="w-4 h-4" /> Configured in .env
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
+                <AlertCircle className="w-4 h-4" /> Placeholder / Missing
+              </span>
+            )}
+          </div>
+
+          <div className="p-3 bg-stone-50 rounded-lg border border-stone-200 sm:col-span-2">
+            <span className="text-[11px] text-stone-500 block mb-1">Project Endpoint</span>
+            <code className="text-[11px] text-stone-800 font-mono truncate block">
+              {import.meta.env.VITE_SUPABASE_URL || 'Not specified'}
+            </code>
+          </div>
+        </div>
+
+        {healthResult && (
+          <div className={`p-4 rounded-xl border text-xs space-y-2 animate-in fade-in ${
+            healthResult.connected ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950' : 'bg-rose-50/70 border-rose-200 text-rose-950'
+          }`}>
+            <div className="flex items-center justify-between font-bold">
+              <span>Connection: {healthResult.connected ? '✅ Active & Responding' : '❌ Failed'}</span>
+              <span className="text-[11px] font-normal text-stone-500">
+                Categories: {healthResult.checks.categories.status} | Products: {healthResult.checks.products.status} | Auth: {healthResult.checks.authService.status}
+              </span>
+            </div>
+            {healthResult.error && (
+              <p className="text-[11px] text-rose-700 font-mono leading-relaxed bg-white/80 p-2 rounded border border-rose-200">
+                {healthResult.error}
+              </p>
+            )}
           </div>
         )}
       </div>

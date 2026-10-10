@@ -99,6 +99,8 @@ export const App: React.FC = () => {
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboard />} />
+                    <Route path="dashboard" element={<Navigate to="/admin" replace />} />
+                    <Route path="analytics" element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="categories" element={<AdminCategories />} />
