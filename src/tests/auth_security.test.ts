@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateAuthInputs, isAuthorizedAdminRole, sanitizeUserRole, ADMIN_ROLES } from '../utils/authSecurity';
+import { isUnsafeSecretKey, getDetectedKeyType } from '../services/supabase';
 
 describe('Admin and Customer Authentication Security Matrix', () => {
   describe('Credential Input Validation & Sanitization', () => {
@@ -188,4 +189,36 @@ describe('Admin and Customer Authentication Security Matrix', () => {
       expect(err).toContain('Unable to connect to Supabase');
     });
   });
+
+  describe('Supabase Key Security & Secret Leak Prevention', () => {
+    it('Detects and blocks service_role keys by name', () => {
+      expect(isUnsafeSecretKey('service_role_key_secret_12345')).toBe(true);
+      expect(isUnsafeSecretKey('sb_secret_9876543210')).toBe(true);
+      expect(isUnsafeSecretKey('SUPABASE_SERVICE_ROLE_TOKEN')).toBe(true);
+    });
+
+    it('Detects and blocks service_role JWT payload', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ role: 'service_role', sub: '123' }));
+      const fakeJwt = `${header}.${payload}.signature`;
+      expect(isUnsafeSecretKey(fakeJwt)).toBe(true);
+    });
+
+    it('Allows legitimate publishable keys and anon JWTs', () => {
+      expect(isUnsafeSecretKey('sbp_live_1234567890abcdef')).toBe(false);
+
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const anonPayload = btoa(JSON.stringify({ role: 'anon', sub: '123' }));
+      const anonJwt = `${header}.${anonPayload}.signature`;
+      expect(isUnsafeSecretKey(anonJwt)).toBe(false);
+    });
+
+    it('Correctly identifies key types in getDetectedKeyType', () => {
+      expect(getDetectedKeyType('')).toBe('none');
+      expect(getDetectedKeyType('sbp_abc1234567890def')).toBe('publishable');
+      expect(getDetectedKeyType('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.anon.sig')).toBe('anon');
+      expect(getDetectedKeyType('my_service_role_secret')).toBe('service_role');
+    });
+  });
 });
+

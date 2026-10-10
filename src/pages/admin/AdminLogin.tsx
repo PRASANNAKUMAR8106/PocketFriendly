@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { isSupabaseConfigured } from '../../services/supabase';
+import { isSupabaseConfigured, hasServiceRoleViolation, supabaseConfigStatus } from '../../services/supabase';
 
 export const AdminLogin: React.FC = () => {
   const { login, logout, user, isAdmin } = useAuth();
@@ -135,15 +135,47 @@ export const AdminLogin: React.FC = () => {
               </p>
             </div>
 
-            {!isSupabaseConfigured && (
-              <div className="p-3.5 bg-amber-950/60 border border-amber-700/80 text-amber-200 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            {hasServiceRoleViolation && (
+              <div className="p-3.5 bg-rose-950/80 border border-rose-600 text-rose-200 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-semibold text-amber-300">Supabase Backend Not Connected</p>
-                  <p className="text-[11px] text-amber-400/90 leading-relaxed">
-                    The store is currently running with placeholder configuration. To sign in with an administrator account, set your real <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">VITE_SUPABASE_URL</code> and <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">VITE_SUPABASE_ANON_KEY</code> in your <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">.env</code> file.
+                  <p className="font-semibold text-rose-300">Security Warning: service_role Secret Key Detected</p>
+                  <p className="text-[11px] text-rose-300/90 leading-relaxed">
+                    A secret <code className="bg-rose-900/60 px-1 py-0.5 rounded text-white">service_role</code> key was found in your environment file. For security, client applications must <strong>never</strong> use the service_role key. Please open your <code className="bg-rose-900/60 px-1 py-0.5 rounded text-white">.env.local</code> or <code className="bg-rose-900/60 px-1 py-0.5 rounded text-white">.env</code> file and replace it with your public <strong>Publishable key</strong> (starts with <code className="bg-rose-900/60 px-1 py-0.5 rounded text-white">sbp_</code>) or legacy <strong>anon key</strong>.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {!isSupabaseConfigured && !hasServiceRoleViolation && (
+              <div className="p-3.5 bg-amber-950/60 border border-amber-700/80 text-amber-200 text-xs rounded-xl flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1.5 w-full">
+                  <p className="font-semibold text-amber-300">Supabase Backend Not Connected</p>
+                  <p className="text-[11px] text-amber-400/90 leading-relaxed">
+                    The store is currently running with placeholder configuration. To connect to your Supabase project, set your real credentials in your <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">.env.local</code> (or <code className="bg-amber-900/60 px-1 py-0.5 rounded text-white">.env</code>) file:
+                  </p>
+                  <div className="bg-stone-950/80 p-2.5 rounded-lg border border-stone-800 text-[10px] font-mono text-stone-300 space-y-1">
+                    <p className="text-stone-500"># Project Root: .env.local</p>
+                    <p><span className="text-gold-400">VITE_SUPABASE_URL</span>=https://&lt;your-project-id&gt;.supabase.co</p>
+                    <p><span className="text-gold-400">VITE_SUPABASE_PUBLISHABLE_KEY</span>=&lt;your-publishable-key-or-anon-key&gt;</p>
+                  </div>
+                  <p className="text-[10px] text-stone-400">
+                    Supports modern Publishable keys (<code className="text-stone-300">sbp_...</code>) and legacy Anon keys (<code className="text-stone-300">eyJ...</code>).
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isSupabaseConfigured && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs rounded-xl flex items-center justify-between animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-medium">Supabase Backend Connected</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
+                  {supabaseConfigStatus.keyType} key active
+                </span>
               </div>
             )}
 

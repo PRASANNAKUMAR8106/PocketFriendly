@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ['VITE_', 'SUPABASE_', 'NEXT_PUBLIC_'],
   // @ts-ignore
   test: {
     environment: 'jsdom',
